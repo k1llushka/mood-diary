@@ -3,37 +3,40 @@ name: 📓 Дневник настроения
 on:
   schedule:
     - cron: "0 18 * * *"   # каждый день в 18:00
-  workflow_dispatch:       # возможность вручную запустить
+  workflow_dispatch:
 
 jobs:
   track-mood:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: 📥 Загрузить репозиторий
-        uses: actions/checkout@v4
+    permissions:
+      contents: write   # ❗ Дает Actions право делать git push
 
-      - name: ✏️ Создать или обновить файл mood_diary.txt
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}   # используется внутренний токен
+
+      - name: ✏️ Создать или обновить mood_diary.txt
         run: |
           TODAY=$(date +"%Y-%m-%d")
 
-          # Если файла нет — создаём заголовок
           if [ ! -f mood_diary.txt ]; then
             echo "📘 ДНЕВНИК НАСТРОЕНИЯ" > mood_diary.txt
             echo "" >> mood_diary.txt
           fi
 
-          # Добавляем запись с сегодняшней датой
-          echo "${TODAY}: ______________________" >> mood_diary.txt
+          echo "${TODAY}: ____________________" >> mood_diary.txt
 
-      - name: 📄 Показать содержимое файла
+      - name: 📄 Показать файл
         run: cat mood_diary.txt
 
-      - name: 💾 Сохранить изменения в GitHub
+      - name: 💾 Коммитим изменения
         run: |
-          git config --global user.email "github-actions@github.com"
-          git config --global user.name "GitHub Actions"
+          git config user.email "github-actions@github.com"
+          git config user.name "GitHub Actions"
 
           git add mood_diary.txt
-          git commit -m "Добавлена запись за $(date +"%Y-%m-%d")" || echo "Нет изменений"
+          git commit -m "Добавлена запись за $(date +'%Y-%m-%d')" || echo "Нет изменений"
           git push
